@@ -103,7 +103,7 @@ async function doSearch(){
           else r="Histórico: "+x.label;
           $("#out").textContent=typeof r==="string"?r:JSON.stringify(r,null,2);await render();
         }catch(e){$("#out").textContent=e.message}
-      }]);
+      }}]);
       out.append(b);
     }
     if(!results.length)out.append(row("Nenhum resultado.",""));

@@ -5,7 +5,7 @@
   "description": "Centro técnico Sifistk para diagnóstico, análise, contexto, sessões, preferências e conexão com o serviço oficial.",
   "minimum_chrome_version": "114",
   "action": {"default_title":"Abrir Sifistk","default_popup":"popup.html"},
-  "background": {"service_worker":"background.js","type":"module"},
+  "background": {"service_worker":"background.js"},
   "permissions": ["storage","alarms","sidePanel","activeTab","scripting"],
   "optional_permissions": ["tabs","downloads","sessions","notifications","tabGroups"],
   "optional_host_permissions": ["http://localhost:8787/*","http://127.0.0.1:8787/*"],

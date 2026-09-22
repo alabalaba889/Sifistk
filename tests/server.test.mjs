@@ -1,4 +1,56 @@
-import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs/promises";import {spawn} from "node:child_process";import path from "node:path";test("project is Node 20+ and agent is configured by environment",async()=>{const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));assert.match(pkg.engines.node,/20/);const env=await fs.readFile(new URL("../.env.example",import.meta.url),"utf8");assert.match(env,/OPENAI_API_KEY=/);assert.match(env,/SIFISTK_AI_MODEL=/);});
-test("agent API exists and does not expose API keys to clients",async()=>{const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");assert.match(server,/\/api\/extension\/agent\/turn/);assert.match(server,/OPENAI_API_KEY/);assert.match(server,/Authorization/);const ext=await fs.readFile(new URL("../extension/core.js",import.meta.url),"utf8");assert.doesNotMatch(ext,/OPENAI_API_KEY/);assert.doesNotMatch(ext,/api.openai.com/);});
-test("invite mode remains controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
-test("server smoke: health and agent-disabled state are explicit",async()=>{const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-agent-test-"));const port=19100+Math.floor(Math.random()*200);const env={...process.env,PORT:String(port),HOST:"127.0.0.1",SIFISTK_PUBLIC_ORIGIN:"http://127.0.0.1:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});try{let ok=false;for(let i=0;i<50&&!ok;i++){await new Promise(r=>setTimeout(r,40));try{const r=await fetch("http://127.0.0.1:"+port+"/api/health");ok=r.ok}catch{}}assert.equal(ok,true);const r=await fetch("http://127.0.0.1:"+port+"/api/config");const d=await r.json();assert.equal(d.agent.enabled,false)}finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}});
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import {spawn} from "node:child_process";
+import path from "node:path";
+
+test("project version and agent environment are aligned",async()=>{
+  const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));
+  assert.equal(pkg.version,"9.0.1");
+  assert.match(pkg.engines.node,/20/);
+  const env=await fs.readFile(new URL("../.env.example",import.meta.url),"utf8");
+  assert.match(env,/OPENAI_API_KEY=/);
+  assert.match(env,/SIFISTK_AI_MODEL=/);
+  assert.match(env,/SIFISTK_AI_REASONING_EFFORT=high/);
+  assert.match(env,/releases\/latest\/download\/Sifistk-extension\.zip/);
+});
+
+test("agent API keeps AI credentials server-side and has bounded context",async()=>{
+  const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
+  const ext=await fs.readFile(new URL("../extension/core.js",import.meta.url),"utf8");
+  assert.match(server,/\/api\/extension\/agent\/turn/);
+  assert.match(server,/OPENAI_API_KEY/);
+  assert.match(server,/reasoning:\{effort:AI_REASONING_EFFORT\}/);
+  assert.match(server,/function bounded\(/);
+  assert.doesNotMatch(server,/JSON\.parse\(s\.slice\(/);
+  assert.match(server,/agentThreads/);
+  assert.doesNotMatch(ext,/OPENAI_API_KEY/);
+  assert.doesNotMatch(ext,/api\.openai\.com/);
+});
+
+test("invite mode stays controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
+
+test("server smoke exposes stable download URL and redirect",async()=>{
+  const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-test-"));
+  const port=19100+Math.floor(Math.random()*200);
+  const env={...process.env,PORT:String(port),HOST:"127.0.0.1",SIFISTK_PUBLIC_ORIGIN:"http://127.0.0.1:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};
+  const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});
+  try{
+    let ok=false;
+    for(let i=0;i<60&&!ok;i++){await new Promise(r=>setTimeout(r,50));try{const r=await fetch("http://127.0.0.1:"+port+"/api/health");ok=r.ok}catch{}}
+    assert.equal(ok,true);
+    const c=await fetch("http://127.0.0.1:"+port+"/api/config");
+    const config=await c.json();
+    assert.equal(config.extensionDownloadUrl,"https://github.com/alabalaba889/Sifistk/releases/latest/download/Sifistk-extension.zip");
+    const v=await fetch("http://127.0.0.1:"+port+"/api/extension/version");
+    const version=await v.json();
+    assert.equal(version.latestVersion,"9.0.1");
+    assert.equal(version.minVersion,"9.0.1");
+    assert.equal(version.downloadUrl,config.extensionDownloadUrl);
+    const d=await fetch("http://127.0.0.1:"+port+"/api/extension/download",{redirect:"manual"});
+    assert.equal(d.status,302);
+    assert.equal(d.headers.get("location"),config.extensionDownloadUrl);
+    const ar=await fetch("http://127.0.0.1:"+port+"/api/extension/agent/turn",{method:"POST",headers:{"content-type":"application/json"}});
+    assert.equal(ar.status,401);
+  }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
+});

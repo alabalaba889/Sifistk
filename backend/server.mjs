@@ -159,6 +159,25 @@ async function route(req, res) {
     return json(res, 200, { user: publicUser(userFrom(req)) });
   }
 
+  if (req.method === "POST" && p === "/api/admin/bootstrap") {
+    const key = req.headers["x-sifistk-admin-key"];
+    if (!process.env.SIFISTK_ADMIN_KEY || key !== process.env.SIFISTK_ADMIN_KEY)
+      return json(res, 403, { error: "Acesso negado." });
+    if (db.users.some(u => u.role === "SUPER_ADMIN"))
+      return json(res, 409, { error: "Administrador inicial já configurado." });
+    const b = await body(req);
+    const name = String(b.name || "Sifistk").trim();
+    const email = String(b.email || "").trim().toLowerCase();
+    const password = String(b.password || "");
+    if (!email || !/^\\S+@\\S+\\.\\S+$/.test(email) || password.length < 12)
+      return json(res, 400, { error: "E-mail válido e senha de pelo menos 12 caracteres são obrigatórios." });
+    const user = { id: id("usr"), name, email, password: passwordHash(password), verified: true, role: "SUPER_ADMIN", createdAt: Date.now() };
+    db.users.push(user);
+    save();
+    audit("ADMIN_BOOTSTRAP", user.id);
+    return json(res, 201, { user: publicUser(user) });
+  }
+
   if (req.method === "POST" && p === "/api/admin/invites") {
     const admin = userFrom(req);
     if (!admin || admin.role !== "SUPER_ADMIN") return json(res, 403, { error: "Acesso negado." });

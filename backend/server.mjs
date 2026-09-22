@@ -17,7 +17,7 @@ const EXTENSION_DOWNLOAD_URL=process.env.SIFISTK_EXTENSION_DOWNLOAD_URL||DEFAULT
 const INVITE_REQUIRED=process.env.SIFISTK_INVITE_REQUIRED!=="false";
 const INVITE_MINUTES=Number(process.env.SIFISTK_INVITE_MINUTES||60);
 const AI_MODEL=process.env.SIFISTK_AI_MODEL||"gpt-5.6-luna";
-const AI_REASONING_EFFORT=process.env.SIFISTK_AI_REASONING_EFFORT||"high";
+const ALLOWED_REASONING=new Set(["none","minimal","low","medium","high","xhigh"]);\nconst AI_REASONING_EFFORT=ALLOWED_REASONING.has(process.env.SIFISTK_AI_REASONING_EFFORT||"")?process.env.SIFISTK_AI_REASONING_EFFORT:"high";
 const AI_WEB_SEARCH=process.env.SIFISTK_AGENT_WEB_SEARCH!=="false";
 const OPENAI_API_KEY=process.env.OPENAI_API_KEY||"";
 const empty={users:[],sessions:[],invites:[],audit:[],extensionTokens:[],licenses:[],reports:[],agentRuns:[]};

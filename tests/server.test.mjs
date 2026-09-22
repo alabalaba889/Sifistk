@@ -25,5 +25,5 @@ test("authenticated portal entry exists",async()=>{
 
 test("server supports directory index routing",async()=>{
   const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
-  assert.match(server,/stat\(file\)\.isDirectory\(\)/);
+  assert.match(server,/fs\.statSync\(file\)\.isDirectory\(\)/);
 });

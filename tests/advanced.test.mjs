@@ -21,3 +21,10 @@ test("background wires yellow capabilities without debugger permission",async()=
   assert.equal(m.permissions.includes("debugger"),false);
   for(const x of ['importScripts("core.js","advanced.js")','ADVANCED_AUDIT','COMPATIBILITY','ADVANCED_INSPECT']) assert.ok(b.includes(x), "missing "+x);
 });
+test("CDP lab is isolated from production manifest",async()=>{
+  const m=JSON.parse(await fs.readFile(new URL("../extension-lab/manifest.json",import.meta.url),"utf8"));
+  assert.deepEqual(m.permissions.sort(),["activeTab","debugger","storage"].sort());
+  assert.match(await fs.readFile(new URL("../extension-lab/background.js",import.meta.url),"utf8"),/chrome\\.debugger\\.attach/);
+  await run(process.execPath,["--check","extension-lab/background.js"]);
+  await run(process.execPath,["--check","extension-lab/popup.js"]);
+});

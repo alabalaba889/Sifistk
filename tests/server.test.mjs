@@ -8,6 +8,7 @@ const run=promisify(execFile);
 
 test("project version and agent environment are aligned",async()=>{
   await run(process.execPath,["--check","backend/server.mjs"],{cwd:process.cwd()});
+  await run(process.execPath,["--check","web/app/app.js"],{cwd:process.cwd()});
   const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));
   assert.equal(pkg.version,"9.0.1");
   assert.match(pkg.engines.node,/20/);
@@ -30,6 +31,8 @@ test("agent API keeps AI credentials server-side and has bounded context",async(
   assert.doesNotMatch(ext,/OPENAI_API_KEY/);
   assert.doesNotMatch(ext,/api\.openai\.com/);
 });
+
+test("workflow publishes a stable release asset",async()=>{const workflow=await fs.readFile(new URL("../.github/workflows/ci.yml",import.meta.url),"utf8");assert.match(workflow,/gh release create/);assert.match(workflow,/Sifistk-extension\.zip/);assert.match(workflow,/contents: write/);});
 
 test("invite mode stays controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
 

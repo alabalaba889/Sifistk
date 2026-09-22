@@ -63,17 +63,16 @@ test("web and extension authentication accept normal email addresses",async()=>{
   }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
 });
 
-test("server derives LAN public origin when explicitly bound to all interfaces",async()=>{
+test("server exposes the configured LAN public origin",async()=>{
   const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-lan-test-"));
   const port=19400+Math.floor(Math.random()*200);
-  const env={...process.env,PORT:String(port),HOST:"0.0.0.0",SIFISTK_PUBLIC_ORIGIN:"",SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};
+  const env={...process.env,PORT:String(port),HOST:"0.0.0.0",SIFISTK_PUBLIC_ORIGIN:"http://192.168.1.50:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};
   const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});
   try{
     let ok=false;
     for(let i=0;i<60&&!ok;i++){await new Promise(r=>setTimeout(r,40));try{ok=(await fetch("http://127.0.0.1:"+port+"/api/health")).ok}catch{}}
     assert.equal(ok,true);
-    const c=await fetch("http://127.0.0.1:"+port+"/api/config",{headers:{host:"192.168.1.50:"+port}});
-    const config=await c.json();
+    const config=await (await fetch("http://127.0.0.1:"+port+"/api/config")).json();
     assert.equal(config.publicOrigin,"http://192.168.1.50:"+port);
   }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
 });

@@ -35,9 +35,11 @@ test("agent API keeps AI credentials server-side and has bounded context",async(
 test("server source handles LAN origins and portal compatibility",async()=>{
   const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
   assert.match(server,/function requestOrigin\(req\)/);
-  assert.match(server,/requestOrigin\(req\)\}\/\\?invite=/);
+  assert.match(server,/requestOrigin\(req\)/);
   assert.match(server,/p==="\\/produto"\|\|p==="\\/produto\\/"/);
-  assert.match(server,/location\\": "\/app\\/"/);
+  const web=await fs.readFile(new URL("../web/app.js",import.meta.url),"utf8");
+  assert.match(web,/window\.location\.assign\("\/app\/"\)/);
+  assert.match(web,/archiveviewer/);
 });
 
 test("workflow publishes a stable release asset",async()=>{const workflow=await fs.readFile(new URL("../.github/workflows/ci.yml",import.meta.url),"utf8");assert.match(workflow,/gh release create/);assert.match(workflow,/Sifistk-extension\.zip/);assert.match(workflow,/contents: write/);});

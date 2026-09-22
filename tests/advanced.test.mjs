@@ -24,7 +24,7 @@ test("background wires yellow capabilities without debugger permission",async()=
 test("CDP lab is isolated from production manifest",async()=>{
   const m=JSON.parse(await fs.readFile(new URL("../extension-lab/manifest.json",import.meta.url),"utf8"));
   assert.deepEqual(m.permissions.sort(),["activeTab","debugger","storage"].sort());
-  assert.match(await fs.readFile(new URL("../extension-lab/background.js",import.meta.url),"utf8"),/chrome\\.debugger\\.attach/);
+  assert.match(await fs.readFile(new URL("../extension-lab/background.js",import.meta.url),"utf8"),/chrome\.debugger\.attach/);
   await run(process.execPath,["--check","extension-lab/background.js"]);
   await run(process.execPath,["--check","extension-lab/popup.js"]);
 });

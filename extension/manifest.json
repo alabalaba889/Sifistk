@@ -1,19 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Sifistk",
-  "version": "8.4.0",
-  "description": "Centro técnico Sifistk para diagnóstico, análise, contexto, sessões, preferências e conexão com o serviço oficial.",
-  "minimum_chrome_version": "114",
-  "action": {"default_title":"Abrir Sifistk","default_popup":"popup.html"},
-  "background": {"service_worker":"background.js"},
-  "permissions": ["storage","alarms","sidePanel","activeTab","scripting"],
-  "optional_permissions": ["tabs","downloads","sessions","notifications","tabGroups"],
+  "version": "9.0.0",
+  "description": "Agente Sifistk: uma interface conversacional que entende objetivos, seleciona ferramentas e executa tarefas autorizadas.",
+  "minimum_chrome_version": "116",
+  "action": {"default_title": "Abrir Sifistk"},
+  "background": {"service_worker": "background.js"},
+  "permissions": ["storage","sidePanel","activeTab","scripting"],
+  "optional_permissions": ["tabs","downloads","notifications"],
   "optional_host_permissions": ["http://*/*","https://*/*"],
-  "side_panel": {"default_path":"sidepanel.html"},
-  "options_page":"options.html",
-  "commands": {
-    "open-sifistk":{"suggested_key":{"default":"Ctrl+Shift+Y"},"description":"Abrir Sifistk"},
-    "analyze-page":{"suggested_key":{"default":"Ctrl+Shift+U"},"description":"Analisar a página atual"},
-    "capture-context":{"suggested_key":{"default":"Ctrl+Shift+C"},"description":"Capturar contexto técnico da página"}
-  }
+  "side_panel": {"default_path": "agent.html"}
 }

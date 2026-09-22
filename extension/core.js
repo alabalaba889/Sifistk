@@ -1,5 +1,5 @@
 const SIFISTK=globalThis.SIFISTK||{};
-SIFISTK.VERSION="9.0.1";
+SIFISTK.VERSION="9.0.2";
 SIFISTK.DEFAULTS={apiOrigin:"http://localhost:8787",settings:{saveActionHistory:true}};
 SIFISTK.getState=async()=>{
   const d=await chrome.storage.local.get(["apiOrigin","user","license","installId","agentConversation","agentInputHistory","agentThreadId","actionHistory"]);
@@ -22,9 +22,11 @@ SIFISTK.ensureDefaults=async()=>{
   return{...s,...p};
 };
 SIFISTK.normalizeOrigin=v=>{
-  const u=new URL(String(v||"").trim().replace(/\/$/,""));
+  const raw=String(v||"").trim().replace(/\/$/,"");
+  const u=new URL(raw);
   if(!["http:","https:"].includes(u.protocol))throw Error("O servidor deve usar HTTP ou HTTPS.");
   if(u.username||u.password)throw Error("A URL não pode conter credenciais.");
+  if(u.pathname!="/"||u.search||u.hash)throw Error("Informe somente a origem do servidor, por exemplo http://localhost:8787.");
   return u.origin;
 };
 SIFISTK.setApiOrigin=async value=>{
@@ -36,7 +38,13 @@ SIFISTK.api=async(path,options={})=>{
   const s=await SIFISTK.getState(),o=SIFISTK.normalizeOrigin(s.apiOrigin);
   const h={Accept:"application/json",...(options.body?{"Content-Type":"application/json"}:{}),...(options.headers||{})};
   if(s.authToken)h.Authorization="Bearer "+s.authToken;
-  const r=await fetch(o+path,{...options,headers:h});
+  let r;
+  try{
+    r=await fetch(o+path,{...options,headers:h,cache:"no-store"});
+  }catch(e){
+    if(e?.name==="AbortError")throw e;
+    throw Error("Não foi possível conectar ao servidor da Sifistk em "+o+". Verifique se o backend está ligado e se este servidor foi autorizado na extensão.");
+  }
   const d=await r.json().catch(()=>({}));
   if(!r.ok){const e=Error(d.error||"Operação recusada.");e.status=r.status;throw e}
   return d;

@@ -10,7 +10,7 @@ test("project version and agent environment are aligned",async()=>{
   await run(process.execPath,["--check","backend/server.mjs"],{cwd:process.cwd()});
   await run(process.execPath,["--check","web/app/app.js"],{cwd:process.cwd()});
   const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));
-  assert.equal(pkg.version,"9.0.1");
+  assert.equal(pkg.version,"9.0.2");
   assert.match(pkg.engines.node,/20/);
   const env=await fs.readFile(new URL("../.env.example",import.meta.url),"utf8");
   assert.match(env,/OPENAI_API_KEY=/);
@@ -30,6 +30,16 @@ test("agent API keeps AI credentials server-side and has bounded context",async(
   assert.match(server,/agentThreads/);
   assert.doesNotMatch(ext,/OPENAI_API_KEY/);
   assert.doesNotMatch(ext,/api\.openai\.com/);
+});
+
+test("server source handles LAN origins and portal compatibility",async()=>{
+  const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
+  assert.match(server,/function requestOrigin\(req\)/);
+  assert.match(server,/requestOrigin\(req\)/);
+  assert.ok(server.includes('p==="/produto"||p==="/produto/"'));
+  const web=await fs.readFile(new URL("../web/app.js",import.meta.url),"utf8");
+  assert.ok(web.includes('window.location.assign("/app/")'));
+  assert.match(web,/archiveviewer/);
 });
 
 test("workflow publishes a stable release asset",async()=>{const workflow=await fs.readFile(new URL("../.github/workflows/ci.yml",import.meta.url),"utf8");assert.match(workflow,/gh release create/);assert.match(workflow,/Sifistk-extension\.zip/);assert.match(workflow,/contents: write/);});
@@ -53,6 +63,20 @@ test("web and extension authentication accept normal email addresses",async()=>{
   }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
 });
 
+test("server exposes the configured LAN public origin",async()=>{
+  const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-lan-test-"));
+  const port=19400+Math.floor(Math.random()*200);
+  const env={...process.env,PORT:String(port),HOST:"0.0.0.0",SIFISTK_PUBLIC_ORIGIN:"http://192.168.1.50:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};
+  const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});
+  try{
+    let ok=false;
+    for(let i=0;i<60&&!ok;i++){await new Promise(r=>setTimeout(r,40));try{ok=(await fetch("http://127.0.0.1:"+port+"/api/health")).ok}catch{}}
+    assert.equal(ok,true);
+    const config=await (await fetch("http://127.0.0.1:"+port+"/api/config")).json();
+    assert.equal(config.publicOrigin,"http://192.168.1.50:"+port);
+  }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
+});
+
 test("invite mode stays controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
 
 test("server smoke exposes stable download URL and redirect",async()=>{
@@ -69,8 +93,8 @@ test("server smoke exposes stable download URL and redirect",async()=>{
     assert.equal(config.extensionDownloadUrl,"https://github.com/alabalaba889/Sifistk/releases/latest/download/Sifistk-extension.zip");
     const v=await fetch("http://127.0.0.1:"+port+"/api/extension/version");
     const version=await v.json();
-    assert.equal(version.latestVersion,"9.0.1");
-    assert.equal(version.minVersion,"9.0.1");
+    assert.equal(version.latestVersion,"9.0.2");
+    assert.equal(version.minVersion,"9.0.2");
     assert.equal(version.downloadUrl,config.extensionDownloadUrl);
     const d=await fetch("http://127.0.0.1:"+port+"/api/extension/download",{redirect:"manual"});
     assert.equal(d.status,302);

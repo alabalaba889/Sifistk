@@ -16,7 +16,7 @@ async function render(){
   const labels={tabs:["Abas","Ler título e URL no gerenciador."],downloads:["Downloads","Baixar relatórios JSON."],sessions:["Sessões","Listar/restaurar janelas e guias fechadas."],notifications:["Notificações","Exibir avisos do Sifistk."],tabGroups:["Grupos","Consultar grupos de abas."]};
   $("#permissions").innerHTML=Object.entries(labels).map(([k,v])=>'<div class="perm"><div><b>'+v[0]+'</b><small>'+v[1]+'</small></div><button data-p="'+k+'">'+(perms[k]?"Concedida":"Conceder")+'</button></div>').join("");
   document.querySelectorAll("[data-p]").forEach(b=>b.onclick=async()=>{
-    try{const r=await send("REQUEST_PERMISSIONS",{permissions:[b.dataset.p]});$("#out").textContent=r.granted?"Permissão concedida.":"Permissão não concedida.";await render();}
+    try{const granted=await chrome.permissions.request({permissions:[b.dataset.p]});$("#out").textContent=granted?"Permissão concedida.":"Permissão não concedida.";await render();}
     catch(e){$("#out").textContent=e.message}
   });
 }

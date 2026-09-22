@@ -14,7 +14,7 @@ test("invite mode defaults to controlled access",()=> {
 test("user portal contains all 30 non-admin feature routes",async()=>{
   const app=await fs.readFile(new URL("../web/app/app.js",import.meta.url),"utf8");
   const expected=["dashboard","profile","sessions","notifications","downloads","download-history","version","license","license-history","license-activation","changelog","help","faq","support","system-notices","status","diagnostics","diagnostic-export","verification","verification-history","onboarding","install","extension-settings","settings","security","privacy","orders","benefits","feedback","search"];
-  for(const route of expected) assert.match(app,new RegExp('["\\']'+route+'["\\']'));
+  for(const route of expected) assert.ok(app.includes('"'+route+'"') || app.includes("'"+route+"'"), "missing route: "+route);
   assert.equal(expected.length,30);
 });
 

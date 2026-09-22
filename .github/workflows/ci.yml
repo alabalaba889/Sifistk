@@ -17,6 +17,13 @@ jobs:
       - run: npm test
       - name: Package extension
         run: cd extension && zip -r ../sifistk-extension-${{ github.sha }}.zip .
+      - name: Package CDP lab
+        run: cd extension-lab && zip -r ../sifistk-cdp-lab-${{ github.sha }}.zip .
+      - name: Upload CDP lab artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sifistk-cdp-lab-${{ github.sha }}
+          path: sifistk-cdp-lab-${{ github.sha }}.zip
       - name: Upload extension artifact
         uses: actions/upload-artifact@v4
         with:

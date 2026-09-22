@@ -24,7 +24,7 @@ npm test
 npm start
 ```
 
-Não abra arquivos HTML diretamente para testar APIs. Execute o servidor Node.
+Não abra arquivos HTML diretamente para testar APIs. Execute o servidor Node.\n\n## Download da extensão\n\nO download para usuários deve apontar para o GitHub Release, não para um artefato de GitHub Actions. O endereço estável usado pelo portal é `https://github.com/alabalaba889/Sifistk/releases/latest/download/Sifistk-extension.zip`. Artefatos do Actions continuam sendo usados somente para inspeção/CI.
 
 ## Produção
 
@@ -34,6 +34,6 @@ O repositório está público enquanto o desenvolvimento está sendo feito para 
 
 ## Segurança
 
-Nunca coloque senhas, tokens ou chaves de API em commits. Use variáveis de ambiente/secrets do provedor.
+Nunca coloque senhas, tokens ou chaves de API em commits. Use variáveis de ambiente/secrets do provedor.\n\nA distribuição oficial da extensão é publicada automaticamente pelo workflow em um GitHub Release versionado.
 
 Consulte `docs/ARCHITECTURE.md`, `docs/DEPLOYMENT.md` e `docs/SECURITY.md`.

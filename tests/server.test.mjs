@@ -34,6 +34,25 @@ test("agent API keeps AI credentials server-side and has bounded context",async(
 
 test("workflow publishes a stable release asset",async()=>{const workflow=await fs.readFile(new URL("../.github/workflows/ci.yml",import.meta.url),"utf8");assert.match(workflow,/gh release create/);assert.match(workflow,/Sifistk-extension\.zip/);assert.match(workflow,/contents: write/);});
 
+test("web and extension authentication accept normal email addresses",async()=>{
+  const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-auth-test-"));
+  const port=19300+Math.floor(Math.random()*200);
+  const env={...process.env,PORT:String(port),HOST:"127.0.0.1",SIFISTK_PUBLIC_ORIGIN:"http://127.0.0.1:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:"",SIFISTK_INVITE_REQUIRED:"false"};
+  const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});
+  try{
+    let ok=false;
+    for(let i=0;i<60&&!ok;i++){await new Promise(r=>setTimeout(r,40));try{ok=(await fetch("http://127.0.0.1:"+port+"/api/health")).ok}catch{}}
+    assert.equal(ok,true);
+    const email="user.sifistk@example.com";
+    const reg=await fetch("http://127.0.0.1:"+port+"/api/auth/register",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({name:"Teste Sifistk",email,password:"SenhaSegura123"})});
+    assert.equal(reg.status,201);
+    const ext=await fetch("http://127.0.0.1:"+port+"/api/extension/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,password:"SenhaSegura123"})});
+    assert.equal(ext.status,200);
+    const data=await ext.json();
+    assert.equal(typeof data.token,"string");
+  }finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}
+});
+
 test("invite mode stays controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
 
 test("server smoke exposes stable download URL and redirect",async()=>{

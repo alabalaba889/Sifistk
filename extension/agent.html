@@ -1,1 +1,67 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sifistk</title><link rel="stylesheet" href="agent.css"></head><body><main class="app"><header class="topbar"><div class="brand"><img src="icon.svg" alt=""><div><strong>Sifistk</strong><span>Agente operacional</span></div></div><div class="top-actions"><button id="newChat" class="icon" title="Nova conversa">＋</button><button id="historyBtn" class="icon" title="Histórico">☰</button></div></header><section id="welcome" class="welcome"><div class="orb">S</div><h1>O que você quer fazer?</h1><p>Converse comigo. Eu analiso o contexto disponível, planejo a tarefa e uso apenas as ferramentas autorizadas.</p><div class="examples"><button data-prompt="Analise esta página e me diga como ela foi construída.">Analisar esta página</button><button data-prompt="Pesquise sobre a tecnologia usada nesta página e compare fontes.">Pesquisar tecnologia</button><button data-prompt="Crie um relatório técnico desta página.">Criar relatório</button></div></section><section id="conversation" class="conversation" aria-live="polite"></section><section id="task" class="task hidden"><div class="task-head"><span id="taskTitle">Tarefa</span><button id="cancelBtn" class="text-btn">Cancelar</button></div><div id="steps" class="steps"></div><div id="toolsUsed" class="tools-used"></div></section><form id="composer" class="composer"><textarea id="message" rows="1" maxlength="12000" placeholder="Diga o que você precisa…"></textarea><div class="composer-bottom"><div class="composer-hint">Ações sensíveis pedem confirmação.</div><button id="send" class="send" type="submit">↑</button></div></form><div id="notice" class="notice hidden"></div></main><script src="agent.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sifistk</title>
+  <link rel="stylesheet" href="agent.css">
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <div class="brand">
+      <img src="icon.svg" alt="">
+      <div><strong>Sifistk</strong><span>Agente operacional</span></div>
+    </div>
+    <div class="top-actions">
+      <span id="accountStatus" class="account-status">Não autenticado</span>
+      <button id="logoutBtn" class="icon hidden" title="Sair">↪</button>
+      <button id="newChat" class="icon" title="Nova conversa">＋</button>
+    </div>
+  </header>
+
+  <section id="auth" class="auth-panel">
+    <div>
+      <strong>Entrar na Sifistk</strong>
+      <p>Use a conta da sua área Sifistk. A senha não é salva pela extensão.</p>
+    </div>
+    <form id="loginForm" class="login-form">
+      <label>E-mail<input id="loginEmail" type="email" autocomplete="username" required></label>
+      <label>Senha<input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required></label>
+      <label>Servidor<input id="serverOrigin" type="url" inputmode="url" spellcheck="false" required></label>
+      <button class="send login-submit" type="submit">Entrar</button>
+    </form>
+    <p id="authMessage" class="auth-message"></p>
+  </section>
+
+  <section id="welcome" class="welcome">
+    <div class="orb">S</div>
+    <h1>O que você quer fazer?</h1>
+    <p>Converse comigo. Eu analiso o contexto disponível, planejo a tarefa e uso apenas as ferramentas autorizadas.</p>
+    <div class="examples">
+      <button data-prompt="Analise esta página e me diga como ela foi construída.">Analisar esta página</button>
+      <button data-prompt="Pesquise sobre a tecnologia usada nesta página e compare fontes.">Pesquisar tecnologia</button>
+      <button data-prompt="Crie um relatório técnico desta página.">Criar relatório</button>
+    </div>
+  </section>
+
+  <section id="conversation" class="conversation" aria-live="polite"></section>
+
+  <section id="task" class="task hidden">
+    <div class="task-head"><span id="taskTitle">Tarefa</span><button id="cancelBtn" class="text-btn">Cancelar</button></div>
+    <div id="steps" class="steps"></div>
+    <div id="toolsUsed" class="tools-used"></div>
+  </section>
+
+  <form id="composer" class="composer">
+    <textarea id="message" rows="1" maxlength="12000" placeholder="Diga o que você precisa…" disabled></textarea>
+    <div class="composer-bottom">
+      <div class="composer-hint">Ações sensíveis pedem confirmação.</div>
+      <button id="send" class="send" type="submit" disabled>↑</button>
+    </div>
+  </form>
+  <div id="notice" class="notice hidden"></div>
+</main>
+<script src="agent.js"></script>
+</body>
+</html>

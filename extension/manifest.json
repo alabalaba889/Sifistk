@@ -1,13 +1,22 @@
 {
   "manifest_version": 3,
   "name": "Sifistk",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "description": "Agente Sifistk: uma interface conversacional que entende objetivos, seleciona ferramentas e executa tarefas autorizadas.",
   "minimum_chrome_version": "116",
-  "action": {"default_title": "Abrir Sifistk"},
-  "background": {"service_worker": "background.js"},
-  "permissions": ["storage","sidePanel","activeTab","scripting"],
-  "optional_permissions": ["tabs","downloads","notifications"],
-  "optional_host_permissions": ["http://*/*","https://*/*"],
-  "side_panel": {"default_path": "agent.html"}
+  "action": {
+    "default_title": "Abrir Sifistk"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "activeTab",
+    "scripting"
+  ],
+  "side_panel": {
+    "default_path": "agent.html"
+  }
 }

@@ -7,7 +7,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.join(ROOT, "..", "web");
 const STORE = process.env.SIFISTK_STORE_PATH || path.join(ROOT, "data-store.json");
-const PORT = Number(process.env.PORT || 8787);\nconst PKG_VERSION = "8.4.0";
+const PORT = Number(process.env.PORT || 8787);
+const PKG_VERSION = "8.4.0";
 const HOST = process.env.HOST || "127.0.0.1";
 const ORIGIN = (process.env.SIFISTK_PUBLIC_ORIGIN || `http://${HOST}:${PORT}`).replace(/\/$/,"");
 const VERSION = process.env.SIFISTK_VERSION || PKG_VERSION;
@@ -38,7 +39,8 @@ function extHeaders(){return {"access-control-allow-origin":"*","access-control-
 
 async function route(req,res){
  const url=new URL(req.url||"/",ORIGIN),p=url.pathname;
- if(req.method==="OPTIONS"&&p.startsWith("/api/extension/"))return json(res,204,{},extHeaders());\n if(req.method==="GET"&&p==="/api/health")return json(res,200,{ok:true,service:"sifistk",version:VERSION});
+ if(req.method==="OPTIONS"&&p.startsWith("/api/extension/"))return json(res,204,{},extHeaders());
+ if(req.method==="GET"&&p==="/api/health")return json(res,200,{ok:true,service:"sifistk",version:VERSION});
  if(req.method==="GET"&&p==="/api/config")return json(res,200,{version:VERSION,inviteRequired:INVITE_REQUIRED,portal:"/app/"});
  if(req.method==="POST"&&p==="/api/invites/validate"){const b=await body(req),t=String(b.token||"");const valid=!!db.invites.find(x=>x.tokenHash===hash(t)&&!x.usedAt&&x.expiresAt>Date.now());return json(res,valid?200:400,valid?{valid:true}:{valid:false,error:"Convite inválido, expirado ou já utilizado."})}
  if(req.method==="POST"&&p==="/api/auth/register"){const b=await body(req),name=String(b.name||"").trim(),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||""),inviteToken=String(b.invite||"");if(!name||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8)return json(res,400,{error:"Nome, e-mail válido e senha de pelo menos 8 caracteres são obrigatórios."});if(db.users.some(u=>u.email===email))return json(res,409,{error:"E-mail já cadastrado."});let invite=null;if(INVITE_REQUIRED){invite=consumeInvite(inviteToken);if(!invite)return json(res,403,{error:"É necessário um convite válido para criar uma conta."})}const user={id:id("usr"),name,email,password:passwordHash(password),verified:true,role:"USER",createdAt:Date.now(),inviteId:invite?.id||null};db.users.push(user);save();audit("REGISTER",user.id,{invited:!!invite});session(res,user.id);return json(res,201,{user:publicUser(user)})}

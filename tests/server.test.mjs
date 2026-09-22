@@ -1,10 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import {spawn} from "node:child_process";
+import {spawn,execFile} from "node:child_process";
 import path from "node:path";
+import {promisify} from "node:util";
+const run=promisify(execFile);
 
 test("project version and agent environment are aligned",async()=>{
+  await run(process.execPath,["--check","backend/server.mjs"],{cwd:process.cwd()});
   const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));
   assert.equal(pkg.version,"9.0.1");
   assert.match(pkg.engines.node,/20/);

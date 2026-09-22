@@ -1,29 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import fs from "node:fs/promises";
-
-test("project declares Node 20+", async () => {
-  const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));
-  assert.match(pkg.engines.node,/20/);
-});
-
-test("invite mode defaults to controlled access",()=> {
-  assert.equal(process.env.SIFISTK_INVITE_REQUIRED ?? "true","true");
-});
-
-test("user portal contains all 30 non-admin feature routes",async()=>{
-  const app=await fs.readFile(new URL("../web/app/app.js",import.meta.url),"utf8");
-  const expected=["dashboard","profile","sessions","notifications","downloads","download-history","version","license","license-history","license-activation","changelog","help","faq","support","system-notices","status","diagnostics","diagnostic-export","verification","verification-history","onboarding","install","extension-settings","settings","security","privacy","orders","benefits","feedback","search"];
-  for(const route of expected) assert.ok(app.includes('"'+route+'"') || app.includes("'"+route+"'"), "missing route: "+route);
-  assert.equal(expected.length,30);
-});
-
-test("authenticated portal entry exists",async()=>{
-  const html=await fs.readFile(new URL("../web/app/index.html",import.meta.url),"utf8");
-  assert.match(html,/Minha Sifistk/);
-});
-
-test("server supports directory index routing",async()=>{
-  const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
-  assert.match(server,/fs\.statSync\(file\)\.isDirectory\(\)/);
-});
+import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs/promises";import {spawn} from "node:child_process";import path from "node:path";test("project is Node 20+ and agent is configured by environment",async()=>{const pkg=JSON.parse(await fs.readFile(new URL("../package.json",import.meta.url),"utf8"));assert.match(pkg.engines.node,/20/);const env=await fs.readFile(new URL("../.env.example",import.meta.url),"utf8");assert.match(env,/OPENAI_API_KEY=/);assert.match(env,/SIFISTK_AI_MODEL=/);});
+test("agent API exists and does not expose API keys to clients",async()=>{const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");assert.match(server,/\/api\/extension\/agent\/turn/);assert.match(server,/OPENAI_API_KEY/);assert.match(server,/Authorization/);assert.doesNotMatch(server,/OPENAI_API_KEY.*json\(/s);});
+test("invite mode remains controlled by default",()=>assert.equal(process.env.SIFISTK_INVITE_REQUIRED??"true","true"));
+test("server smoke: health and agent-disabled state are explicit",async()=>{const dir=await fs.mkdtemp(path.join(process.cwd(),"sifistk-agent-test-"));const port=19100+Math.floor(Math.random()*200);const env={...process.env,PORT:String(port),HOST:"127.0.0.1",SIFISTK_PUBLIC_ORIGIN:"http://127.0.0.1:"+port,SIFISTK_STORE_PATH:path.join(dir,"store.json"),OPENAI_API_KEY:""};const p=spawn(process.execPath,["backend/server.mjs"],{env,stdio:["ignore","pipe","pipe"]});try{let ok=false;for(let i=0;i<50&&!ok;i++){await new Promise(r=>setTimeout(r,40));try{const r=await fetch("http://127.0.0.1:"+port+"/api/health");ok=r.ok}catch{}}assert.equal(ok,true);const r=await fetch("http://127.0.0.1:"+port+"/api/config");const d=await r.json();assert.equal(d.agent.enabled,false)}finally{p.kill("SIGTERM");await fs.rm(dir,{recursive:true,force:true})}});

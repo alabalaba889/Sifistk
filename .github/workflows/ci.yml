@@ -15,3 +15,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm test
+      - name: Package extension
+        run: cd extension && zip -r ../sifistk-extension-${{ github.sha }}.zip .
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sifistk-extension-${{ github.sha }}
+          path: sifistk-extension-${{ github.sha }}.zip

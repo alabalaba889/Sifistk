@@ -1,0 +1,25 @@
+name: Sifistk Lighthouse Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL pública ou de teste que será auditada"
+        required: true
+        type: string
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Lighthouse
+        run: |
+          npx --yes lighthouse@13.5.0 "${{ inputs.url }}" \
+            --output=json \
+            --output-path=./lighthouse-report.json \
+            --chrome-flags="--headless --no-sandbox --disable-gpu"
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sifistk-lighthouse-report
+          path: lighthouse-report.json

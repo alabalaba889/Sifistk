@@ -36,9 +36,9 @@ test("server source handles LAN origins and portal compatibility",async()=>{
   const server=await fs.readFile(new URL("../backend/server.mjs",import.meta.url),"utf8");
   assert.match(server,/function requestOrigin\(req\)/);
   assert.match(server,/requestOrigin\(req\)/);
-  assert.match(server,/p==="\\/produto"\|\|p==="\\/produto\\/"/);
+  assert.ok(server.includes('p==="/produto"||p==="/produto/"'));
   const web=await fs.readFile(new URL("../web/app.js",import.meta.url),"utf8");
-  assert.match(web,/window\.location\.assign\("\/app\/"\)/);
+  assert.ok(web.includes('window.location.assign("/app/")'));
   assert.match(web,/archiveviewer/);
 });
 

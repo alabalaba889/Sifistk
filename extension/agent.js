@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const welcome=$("#welcome"),conversationEl=$("#conversation"),composer=$("#composer"),message=$("#message"),send=$("#send"),task=$("#task"),stepsEl=$("#steps"),toolsEl=$("#toolsUsed"),notice=$("#notice"),auth=$("#auth"),loginForm=$("#loginForm"),loginEmail=$("#loginEmail"),loginPassword=$("#loginPassword"),serverOrigin=$("#serverOrigin"),authMessage=$("#authMessage"),accountStatus=$("#accountStatus"),logoutBtn=$("#logoutBtn");
 const MAX_TOOL_CALLS=20,MAX_TOOL_ROUNDS=8;
-let state={conversation:[],inputHistory:[],threadId:null,busy:false,cancelled:false,generation:0,controller:null,apiOrigin:"http://localhost:8787",user:null};
+let state={conversation:[],inputHistory:[],threadId:null,busy:false,cancelled:false,generation:0,controller:null,apiOrigin:"http://localhost:8787",user:null,activeUserText:""};
 
 function call(type,payload={}){
   return new Promise((resolve,reject)=>{
@@ -124,8 +124,9 @@ async function runTurn(messageText,generation,context=null,toolOutputs=null){
   }
   const calls=result.toolCalls||[];
   if(!calls.length){
-    if(messageText){
-      state.inputHistory.push({role:"user",content:[{type:"input_text",text:messageText}]});
+    if(state.activeUserText){
+      state.inputHistory.push({role:"user",content:[{type:"input_text",text:state.activeUserText}]});
+      state.activeUserText="";
     }
     if(result.text)state.inputHistory.push({role:"assistant",content:[{type:"output_text",text:result.text}]});
     await chrome.storage.local.set({agentConversation:state.conversation.slice(-100),agentInputHistory:state.inputHistory.slice(-40),agentThreadId:state.threadId||null});
@@ -136,6 +137,7 @@ async function runTurn(messageText,generation,context=null,toolOutputs=null){
   setTask(true,"Executando tarefa");
   state.toolCount=(state.toolCount||0)+calls.length;
   if((state.rounds||0)>=MAX_TOOL_ROUNDS||state.toolCount>MAX_TOOL_CALLS){
+    if(state.activeUserText){state.inputHistory.push({role:"user",content:[{type:"input_text",text:state.activeUserText}]});state.activeUserText="";}
     setTask(false);state.busy=false;send.disabled=false;
     addMessage("assistant","Parei a execução porque o limite seguro de etapas foi atingido. Revise o que já foi concluído antes de continuar.");
     rememberMessage("assistant","Parei a execução porque o limite seguro de etapas foi atingido.");
@@ -156,7 +158,7 @@ async function submit(value){
   if(!value||state.busy)return;
   const s=await call("GET_STATE");
   if(!s.authToken){auth.classList.remove("hidden");showNotice("Faça login antes de usar a IA.");loginEmail.focus();return}
-  state.busy=true;state.cancelled=false;state.generation++;const generation=state.generation;state.controller=null;state.rounds=0;state.toolCount=0;send.disabled=true;
+  state.busy=true;state.cancelled=false;state.generation++;state.activeUserText=value;const generation=state.generation;state.controller=null;state.rounds=0;state.toolCount=0;send.disabled=true;
   welcome.classList.add("hidden");addMessage("user",value);rememberMessage("user",value);setTask(true,"Entendendo a tarefa");stepsEl.innerHTML="";toolsEl.innerHTML="";addStep("Entendendo o objetivo…","active");
   try{
     const context=await currentContext();
@@ -165,6 +167,7 @@ async function submit(value){
     if(generation!==state.generation)return;
     setTask(false);state.busy=false;state.controller=null;send.disabled=false;
     if(e.status===401){await call("LOGOUT").catch(()=>{});setAuthenticated(null);auth.classList.remove("hidden")}
+    if(e.status===409){state.threadId=null;await chrome.storage.local.remove(["agentThreadId"]);}
     showNotice(e.message);addMessage("assistant","Não consegui concluir a execução. "+e.message);rememberMessage("assistant","Não consegui concluir a execução. "+e.message);
     await chrome.storage.local.set({agentConversation:state.conversation.slice(-100),agentInputHistory:state.inputHistory.slice(-40),agentThreadId:state.threadId||null});
   }

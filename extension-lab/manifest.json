@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Sifistk Advanced Lab",
+  "version": "1.0.0",
+  "description": "Build de laboratório para diagnósticos avançados via Chrome DevTools Protocol.",
+  "minimum_chrome_version": "114",
+  "action": {"default_popup":"popup.html"},
+  "background": {"service_worker":"background.js"},
+  "permissions": ["debugger","activeTab","storage"]
+}

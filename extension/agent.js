@@ -12,6 +12,24 @@ function call(type,payload={}){
     });
   });
 }
+
+async function normalizeOrigin(value){
+  const raw=String(value||"").trim().replace(/\/$/,"");
+  const u=new URL(raw);
+  if(!["http:","https:"].includes(u.protocol))throw Error("O servidor deve usar HTTP ou HTTPS.");
+  if(u.username||u.password||u.pathname!=="/"||u.search||u.hash)throw Error("Informe somente a origem, por exemplo http://localhost:8787.");
+  return u.origin;
+}
+
+async function ensureServerPermission(value){
+  const origin=await normalizeOrigin(value);
+  const pattern=origin+"/*";
+  if(await chrome.permissions.contains({origins:[pattern]}))return origin;
+  const granted=await chrome.permissions.request({origins:[pattern]});
+  if(!granted)throw Error("A permissão para acessar o servidor da Sifistk foi recusada.");
+  return origin;
+}
+
 function addMessage(role,text,meta=""){
   if(!text)return;
   const row=document.createElement("div");row.className="msg "+role;
@@ -35,6 +53,7 @@ function setAuthenticated(user){
   logoutBtn.classList.toggle("hidden",!ok);
   accountStatus.textContent=ok?(state.user.name||state.user.email||"Autenticado"):"Não autenticado";
 }
+
 async function refreshState(){
   const s=await call("GET_STATE");
   state.apiOrigin=s.apiOrigin;
@@ -100,7 +119,13 @@ async function callApi(body,generation){
   state.controller=new AbortController();
   const timer=setTimeout(()=>state.controller?.abort(),60000);
   try{
-    const r=await fetch(base+"/api/extension/agent/turn",{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json",Authorization:"Bearer "+s.authToken},body:JSON.stringify(body),signal:state.controller.signal});
+    let r;
+    try{
+      r=await fetch(base+"/api/extension/agent/turn",{method:"POST",headers:{Accept:"application/json","Content-Type":"application/json",Authorization:"Bearer "+s.authToken},body:JSON.stringify(body),signal:state.controller.signal,cache:"no-store"});
+    }catch(e){
+      if(e?.name==="AbortError")throw e;
+      throw Error("Não foi possível conectar ao servidor da Sifistk em "+base+". Verifique se o backend está ligado e se o servidor foi autorizado na extensão.");
+    }
     const d=await r.json().catch(()=>({}));
     if(!r.ok){const e=Error(d.error||"A IA não pôde executar a tarefa.");e.status=r.status;throw e}
     return d;
@@ -117,7 +142,6 @@ async function runTurn(messageText,generation,context=null,toolOutputs=null){
   if(toolOutputs)payload.toolOutputs=toolOutputs;
   const result=await callApi(payload,generation);
   if(result.threadId)state.threadId=result.threadId;
-  for(const tc of result.toolCalls||[]){}
   if(result.text){
     addMessage("assistant",result.text,result.toolCalls?.length?"Executando ferramentas":"");
     rememberMessage("assistant",result.text);
@@ -178,9 +202,13 @@ message.addEventListener("input",autoResize);
 message.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();composer.requestSubmit()}});
 
 loginForm.addEventListener("submit",async e=>{
-  e.preventDefault();authMessage.className="auth-message";authMessage.textContent="Entrando…";
+  e.preventDefault();authMessage.className="auth-message";authMessage.textContent="Conectando ao servidor…";
   try{
-    await call("SET_API_ORIGIN",{value:serverOrigin.value});
+    const origin=await ensureServerPermission(serverOrigin.value);
+    await call("SET_API_ORIGIN",{value:origin});
+    const diagnosis=await call("DIAGNOSTICS");
+    if(!diagnosis.server?.ok)throw Error(diagnosis.server?.error||"O servidor da Sifistk não respondeu.");
+    authMessage.textContent="Servidor conectado. Entrando…";
     const data=await call("LOGIN",{email:loginEmail.value,password:loginPassword.value});
     loginPassword.value="";authMessage.className="auth-message ok";authMessage.textContent="Login realizado.";
     state.apiOrigin=(await call("GET_STATE")).apiOrigin;setAuthenticated(data.user);showNotice("Conectado à Sifistk.");

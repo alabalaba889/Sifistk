@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sifistk — Acesso</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="shell">
+  <section class="card">
+    <div class="brand">SIFISTK</div>
+    <p class="eyebrow">Acesso controlado</p>
+    <h1>Bem-vindo à Sifistk.</h1>
+    <p id="status">Este site é destinado a pessoas que receberam um convite.</p>
+    <div id="inviteBox" class="notice"></div>
+    <div class="tabs"><button data-mode="login">Entrar</button><button data-mode="register">Criar conta</button></div>
+    <form id="form">
+      <label>Nome<input id="name" autocomplete="name" hidden></label>
+      <label>E-mail<input id="email" type="email" autocomplete="email" required></label>
+      <label>Senha<input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
+      <button class="primary" type="submit">Entrar</button>
+    </form>
+    <p id="message" class="message"></p>
+  </section>
+</main>
+<script src="./app.js" defer></script>
+</body>
+</html>

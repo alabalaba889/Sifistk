@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,9 +19,14 @@ jobs:
           cache: npm
       - run: npm test
       - name: Package extension
-        run: cd extension && zip -r ../sifistk-extension-${{ github.sha }}.zip .
+        run: cd extension && zip -r -X ../Sifistk-extension.zip .
+      - name: Validate extension ZIP
+        run: |
+          unzip -t Sifistk-extension.zip
+          unzip -p Sifistk-extension.zip manifest.json > /tmp/manifest.json
+          node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("/tmp/manifest.json"));if(m.manifest_version!==3)process.exit(1);if(m.version!==require("./package.json").version)process.exit(2);'
       - name: Package CDP lab
-        run: cd extension-lab && zip -r ../sifistk-cdp-lab-${{ github.sha }}.zip .
+        run: cd extension-lab && zip -r -X ../sifistk-cdp-lab-${{ github.sha }}.zip .
       - name: Upload CDP lab artifact
         uses: actions/upload-artifact@v4
         with:
@@ -28,4 +36,29 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sifistk-extension-${{ github.sha }}
-          path: sifistk-extension-${{ github.sha }}.zip
+          path: Sifistk-extension.zip
+
+  release:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Package stable extension asset
+        run: cd extension && zip -r -X ../Sifistk-extension.zip .
+      - name: Publish versioned GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; leaving the existing release untouched."
+            exit 0
+          fi
+          gh release create "$tag" Sifistk-extension.zip --title "Sifistk $tag" --notes "Sifistk browser extension $tag. Built from commit $GITHUB_SHA."

@@ -128,7 +128,6 @@ async function runTurn(messageText,generation,context=null,toolOutputs=null){
       state.inputHistory.push({role:"user",content:[{type:"input_text",text:messageText}]});
     }
     if(result.text)state.inputHistory.push({role:"assistant",content:[{type:"output_text",text:result.text}]});
-    await call("SAVE_CONVERSATION",{conversation:state.conversation});
     await chrome.storage.local.set({agentConversation:state.conversation.slice(-100),agentInputHistory:state.inputHistory.slice(-40),agentThreadId:state.threadId||null});
     setTask(false);
     state.busy=false;state.controller=null;send.disabled=false;message.focus();

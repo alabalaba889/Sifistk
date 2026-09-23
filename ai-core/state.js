@@ -1,0 +1,6 @@
+import {id,now,STATUS} from "./types.js";
+export function createState({project="Sifistk",version="10.1.0",task="",requestId=id("req")}={}){return {schemaVersion:1,project,version,requestId,task,createdAt:now(),updatedAt:now(),agents:{},files:[],tools:[],tests:[],issues:[],decisions:[],conflicts:[],history:[],evidence:[],status:STATUS.PROPOSED}}
+export function record(state,event){const next=structuredClone(state);next.history.push({...event,at:now()});next.updatedAt=now();return next}
+export function setStatus(state,status,detail=""){const next=record(state,{type:"STATUS",status,detail});next.status=status;next.evidence.push({status,detail,at:next.updatedAt});return next}
+export function registerAgent(state,agent){const next=record(state,{type:"AGENT_REGISTERED",agentId:agent.id});next.agents[agent.id]={...agent,status:STATUS.NOT_RUN};return next}
+export function registerDecision(state,decision){const next=record(state,{type:"DECISION",decision});next.decisions.push(decision);return next}

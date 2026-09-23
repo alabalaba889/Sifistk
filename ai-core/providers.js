@@ -1,0 +1,2 @@
+export function providerAdapter({id,name,provider,capabilities=[],propose}){if(!id||!name||typeof propose!=="function")throw new Error("Agent adapter requires id, name and propose()");return Object.freeze({id,name,provider,capabilities:[...capabilities],propose})}
+export function unavailableAgent({id,name,provider,reason}){return providerAdapter({id,name,provider,capabilities:[],async propose(){return {status:"NOT_AVAILABLE",reason}}})}

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Sifistk",
-  "version": "9.0.2",
-  "description": "Agente Sifistk: uma interface conversacional que entende objetivos, seleciona ferramentas e executa tarefas autorizadas.",
+  "version": "10.1.0",
+  "description": "Agente Sifistk com AI Core, orquestração multiagente e ferramentas autorizadas.",
   "minimum_chrome_version": "116",
   "action": {
     "default_title": "Abrir Sifistk"

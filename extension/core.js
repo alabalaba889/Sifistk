@@ -1,5 +1,7 @@
 const SIFISTK=globalThis.SIFISTK||{};
-SIFISTK.VERSION="9.0.2";
+SIFISTK.AI_CORE_VERSION="10.1.0";
+SIFISTK.OPERATIONAL_STATUSES=["PROPOSED","IMPLEMENTED","TESTED","VERIFIED","FAILED","BLOCKED","UNKNOWN","NOT_RUN","NOT_AVAILABLE","FILE_READ_FAILED","TOOL_FAILED"];
+SIFISTK.VERSION="10.1.0";
 SIFISTK.DEFAULTS={apiOrigin:"http://localhost:8787",settings:{saveActionHistory:true}};
 SIFISTK.getState=async()=>{
   const d=await chrome.storage.local.get(["apiOrigin","user","license","installId","agentConversation","agentInputHistory","agentThreadId","actionHistory"]);
